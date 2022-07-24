@@ -23,19 +23,19 @@ glimpse(dataOriginal)
 
 # Exploracion inicial 
 
-# El data set contiene informaci�n sobre 1460 casas en la ciudad de Ames, Iowa. 
-# Para cada casa, las cuales se identifican con un ID �nico,
+# El data set contiene información sobre 1460 casas en la ciudad de Ames, Iowa. 
+# Para cada casa, las cuales se identifican con un ID único,
 # contamos con 79 variables exploratorias. Estas describen aspectos de la casa como 
-# zona, tama�o, forma, amenidades, entre otras. La variable objetivo, que se busca 
+# zona, tamaño, forma, amenidades, entre otras. La variable objetivo, que se busca 
 # predecir, es el precio de venta de la casa. 
 
 introduce(dataOriginal)
 plot_intro(dataOriginal)
 
 # Procedemos a analizar la calidad de los datos. Vemos que hay variables con altos
-# porcentajes de NA's, por lo que las descartamos. Estas variables tienen el factor en com�n 
+# porcentajes de NA's, por lo que las descartamos. Estas variables tienen el factor en común 
 # de referirse a utilidades poco comunes que una casa pueda tener, como piscinas o cercas. 
-# La mayor�a de las casas en el data set no posee estas caracteristicas. En total, removemos 
+# La mayoría de las casas en el data set no posee estas caracteristicas. En total, removemos 
 # las siguientes 5 variables:
 # PoolQC
 # MiscFeature
@@ -110,7 +110,7 @@ introduce(dataOriginal)
 
 ## ====================== PCA ======================
 
-# Filtramos las variables num�ricas para realizarles 
+# Filtramos las variables numéricas para realizarles 
 # un PCA. Luego, de las variables restantes descartamos aquellas que 
 # no sean continuas. Variables discretas y ordinales se evitan. 
 # Las variables descartadas son las siguientes:
@@ -140,7 +140,7 @@ dataPCA <- dataOriginal %>%
 
 # Despues de la limpieza, quedamos con 16 variables continuas. 
 # Deseamos reducir la dimensionalidad de este data set empleando PCA. 
-# Primero, creamos la matriz de correlaci�n de este set de datos, y 
+# Primero, creamos la matriz de correlación de este set de datos, y 
 # notamos que su determinante es muy cercano a 0. 
 
 rcor <- cor(dataPCA, use = "pairwise.complete.obs")
@@ -149,16 +149,40 @@ det(rcor)
 # 
 
 pafData <- paf(as.matrix(dataPCA))
-pafData$KMO #0.42 La adecuación a la muestra es mala
+pafData$KMO #0.42 La adecuaciÃ³n a la muestra es mala
 pafData$Bartlett #198.58 Mientras mas alto sea mejor
 summary(pafDatos)
 
 
 
+## ====================== Reglas de Asociación ======================
 
+#Llamamos al dataset original para quitarle todo lo que quitamos para PCA
+#excepto algunas variables categóricas cuyas entradas aparecen numéricas:
+#MSSubClass
+#OverallQual
+#OverallCond
+#MoSold
 
+dataOriginal <- read.csv("train.csv")
 
+dataARules <- dataOriginal %>%
+  select(where(is.character))
 
+dataARules$MSSubClass <- dataOriginal$MSSubClass
+dataARules$OverallQual <- dataOriginal$OverallQual
+dataARules$OverallCond <- dataOriginal$OverallCond
+dataARules$MoSold <- dataOriginal$MoSold
 
+introduce(dataARules)
 
+glimpse(dataARules)
+
+reglas<-apriori(dataARules[, c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)],
+                                              parameter = list(support = 0.2,
+                                              confidence = 0.70,
+                                              target = "rules"))
+#Advertencia: Aún debemos quitar algunas variables o incrementar algún parámetro para evitar muchas reglas (actualmente más de 3000).
+
+inspect(reglas)
 
