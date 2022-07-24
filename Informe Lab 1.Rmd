@@ -13,6 +13,7 @@ library(dplyr)
 library(DataExplorer)
 library(corrplot)
 library(psych)
+library(arules)
 
 dataOriginal <- read.csv("train.csv")
 
@@ -180,6 +181,19 @@ compPrinc <- prcomp(na.omit(dataPCA[,-1]), scale = T)
 summary(compPrinc)
 ```
 
+Las herramientas de visualización de PCA nos fallaron a último momento, pero 
+numéricamente podemos interpretar el tema de cada uno de los componentes. 
+Resaltamos que las primeras 5 componentes explican el 75% de la variablidad. 
+Estos componentes pueden intrepretarse como:
+
+* Índice de área de amenidades y espacios secundarios
+* Índice de área de espacios interiores
+* Índice de antiguedad de la casa
+* Índice de calidad de sótano
+* Índice de año de venta
+
+
+
 \newpage
 
 ## Reglas de asociación
@@ -193,7 +207,6 @@ excepto algunas variables categóricas cuyas entradas parecen numéricas:
 
 ```{r, echo=FALSE}
 dataOriginal <- read.csv("train.csv")
-
 dataOriginal <- dataOriginal %>%
   select(-c(PoolQC, MiscFeature, Alley, Fence, FireplaceQu, Street, 
             LandContour, Utilities, LandSlope, Condition1, 
@@ -203,7 +216,7 @@ dataOriginal <- dataOriginal %>%
             BsmtFinSF2, LotArea, LowQualFinSF, BsmtHalfBath, 
             EnclosedPorch, KitchenAbvGr, X3SsnPorch, MiscVal, 
             PoolArea, ScreenPorch,RoofStyle))
-            
+
 dataARules <- dataOriginal %>%
   select(where(is.character))
 dataARules$MSSubClass <- dataOriginal$MSSubClass
@@ -215,7 +228,6 @@ Entonces, el data frame para las reglas de asociación se ve de esta manera:
 
 ```{r}
 glimpse(dataARules)
-
 ```
 Teniendo este nuevo set de datos, corremos el alogritmo de reglas de asociación.  Usando un support de 48% y un confidence de 60%, se obtuvieron las reglas de asociación que se observan a continuación.
 
@@ -227,14 +239,26 @@ reglas<-apriori(dataARules[, c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,2
 ```
 ```{r}
 inspect(reglas)
-
 ```
 
 Ignoramos las reglas triviales (con premisa nula). Vemos algunas reglas interesantes (todas hablan de probabilidades, no equivalencias exactas):
+
 * Las primeras dos reglas nos dan una probable equivalencia entre las casas que poseen un garage pegado a ellas y las casas ubicadas en residenciales con baja densidad poblacional.
 * Las siguientes dos reglas nos dicen que las casas cuyo terreno  tiene una forma regular también mantienen todo su terreno en el interior de la propiedad.
+
 * Las casas sin exposición exterior a su sótano son casas que mantienen su terreno en el interior.
+
 * Las casas sin exposición exterior a su sótano son casas en residenciales con baja densidad poblacional.
+
 * La quinta regla junta la 3 y 4. Las casas con su terreno completamente en el interior son casas en residenciales con baja densidad poblacional.
+
+
+## Conclusiones
+
+La herramienta de reglas de asociación nos ayuda a crear relaciones entre variables importantes en el conjunto de datos, lo cual puede ser útil para saber qué tipo de variables esperamos ver cuando aparece otra, y con cuánta frecuencia. En nuestro caso, encontramos una alta relación entre algunas características de las casas, como la regularidad de la forma de un terreno y el interior del terreno de la casa, entre otras. Para nuestros propósitos de predicción, esto puede ayudar a agrupar distintos tipos de casas usando las reglas obtenidas para hacer las separaciones.
+
+
+
+
 
 
