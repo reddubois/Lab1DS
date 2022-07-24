@@ -180,4 +180,61 @@ compPrinc <- prcomp(na.omit(dataPCA[,-1]), scale = T)
 summary(compPrinc)
 ```
 
+\newpage
+
+## Reglas de asociación
+
+Volvemos al dataset original para quitarle todo lo que quitamos para PCA,
+excepto algunas variables categóricas cuyas entradas parecen numéricas:
+* MSSubClass
+* OverallQual
+* OverallCond
+* MoSold
+
+```{r, echo=FALSE}
+dataOriginal <- read.csv("train.csv")
+
+dataOriginal <- dataOriginal %>%
+  select(-c(PoolQC, MiscFeature, Alley, Fence, FireplaceQu, Street, 
+            LandContour, Utilities, LandSlope, Condition1, 
+            Condition2, BldgType, RoofMatl, ExterCond, BsmtCond, 
+            BsmtFinType2, Heating, CentralAir, Electrical, Functional, 
+            GarageQual, GarageCond, PavedDrive, SaleType, SaleCondition,
+            BsmtFinSF2, LotArea, LowQualFinSF, BsmtHalfBath, 
+            EnclosedPorch, KitchenAbvGr, X3SsnPorch, MiscVal, 
+            PoolArea, ScreenPorch,RoofStyle))
+            
+dataARules <- dataOriginal %>%
+  select(where(is.character))
+dataARules$MSSubClass <- dataOriginal$MSSubClass
+dataARules$OverallQual <- dataOriginal$OverallQual
+dataARules$OverallCond <- dataOriginal$OverallCond
+dataARules$MoSold <- dataOriginal$MoSold
+```
+Entonces, el data frame para las reglas de asociación se ve de esta manera:
+
+```{r}
+glimpse(dataARules)
+
+```
+Teniendo este nuevo set de datos, corremos el alogritmo de reglas de asociación.  Usando un support de 48% y un confidence de 60%, se obtuvieron las reglas de asociación que se observan a continuación.
+
+```{r, echo=FALSE}
+reglas<-apriori(dataARules[, c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)],
+                                              parameter = list(support = 0.48,
+                                              confidence = 0.60,
+                                              target = "rules"))
+```
+```{r}
+inspect(reglas)
+
+```
+
+Ignoramos las reglas triviales (con premisa nula). Vemos algunas reglas interesantes (todas hablan de probabilidades, no equivalencias exactas):
+* Las primeras dos reglas nos dan una probable equivalencia entre las casas que poseen un garage pegado a ellas y las casas ubicadas en residenciales con baja densidad poblacional.
+* Las siguientes dos reglas nos dicen que las casas cuyo terreno  tiene una forma regular también mantienen todo su terreno en el interior de la propiedad.
+* Las casas sin exposición exterior a su sótano son casas que mantienen su terreno en el interior.
+* Las casas sin exposición exterior a su sótano son casas en residenciales con baja densidad poblacional.
+* La quinta regla junta la 3 y 4. Las casas con su terreno completamente en el interior son casas en residenciales con baja densidad poblacional.
+
 
