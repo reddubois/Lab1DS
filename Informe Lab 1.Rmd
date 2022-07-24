@@ -1,0 +1,183 @@
+---
+title: "Laboratorio 1"
+author: "Oscar Godoy - Rafael Dubois"
+date: '2022-07-24'
+output: pdf_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(DataExplorer)
+library(corrplot)
+library(psych)
+
+dataOriginal <- read.csv("train.csv")
+
+```
+
+## Limpieza y exploración inicial
+
+
+El data set contiene información sobre 1460 casas en la ciudad de Ames, Iowa. 
+Para cada una de las casas, las cuales se identifican con un ID único,
+contamos con 79 variables exploratorias. Estas describen aspectos de la casa como 
+zona, tamaño, forma, amenidades, entre otras. La variable objetivo, que se busca 
+predecir, es el precio de venta de la casa. 
+
+```{r}
+introduce(dataOriginal)
+```
+
+Procedemos a analizar la calidad de los datos. Vemos que hay variables con altos
+porcentajes de NA's, por lo que las descartamos. Estas variables tienen el factor en común 
+de referirse a utilidades poco comunes que una casa pueda tener, como piscinas o cercas. 
+La mayoría de las casas en el data set no posee estas características. En total, removemos 
+las siguientes 5 variables:
+
+* PoolQC
+* MiscFeature
+* Alley 
+* Fence
+* FireplaceQu
+
+```{r, echo=FALSE, fig.height=3, fig.width=5}
+plot_missing(dataOriginal)
+
+dataOriginal <- dataOriginal %>%
+  select(-c(PoolQC, MiscFeature, Alley, Fence, FireplaceQu))
+```
+
+\newpage
+Ahora, analizamos la distribución de las variables 
+cuantitativas y cualitativas. Descartamos las variables cualitativas
+que sean muy homogeneas en la poblacion. Se elige descartar aquellas 
+variables donde una categoria concentra mas del 80% de las casas. 
+Entonces, descartamos las siguientes 20 variables:
+
+* Street
+* LandContour
+* Utilities
+* LandSlope
+* Condition1
+* Condition2
+* BldgType
+* RoofMatl
+* ExterCond
+* BsmtCond
+* BsmtFinType2
+* Heating
+* CentralAir
+* Electrical
+* Functional
+* GarageQual
+* GarageCond
+* PavedDrive
+* SaleType
+* SaleCondition
+
+```{r, echo=FALSE, fig.height=6, fig.width=6}
+plot_bar(dataOriginal)
+
+dataOriginal <- dataOriginal %>%
+  select(-c(Street, LandContour, Utilities, LandSlope, Condition1, 
+            Condition2, BldgType, RoofMatl, ExterCond, BsmtCond, 
+            BsmtFinType2, Heating, CentralAir, Electrical, Functional, 
+            GarageQual, GarageCond, PavedDrive, SaleType, SaleCondition))
+```
+
+\newpage
+
+
+De igual manera, descartamos las variables cuantitativas 
+que esten muy sesgadas. Descartamos aquellas variables donde 
+al menos el 80% de los datos asuman un mismo valor. 
+Encontramos 9 de estas variables:
+
+* BsmtFinSF2
+* LotArea
+* LowQualFinSF
+* BsmtHalfBath
+* EnclosedPorch
+* KitchenAbvGr
+* X3SsnPorch
+* MiscVal
+* PoolArea
+* ScreenPorch
+
+```{r, echo=FALSE, fig.height=6, fig.width=6}
+plot_histogram(dataOriginal)
+
+dataOriginal <- dataOriginal %>%
+  select(-c(BsmtFinSF2, LotArea, LowQualFinSF, BsmtHalfBath, 
+            EnclosedPorch, KitchenAbvGr, X3SsnPorch, MiscVal, 
+            PoolArea, ScreenPorch))
+```
+
+Finalmente, contamos con 46 variables cualitativas y cuantitativas que nos proponemos a investigar.  
+```{r}
+introduce(dataOriginal)
+```
+
+\newpage
+## Análisis de Componentes Principales
+
+Filtramos las variables numéricas para realizarles 
+un PCA. Luego, de las variables restantes descartamos aquellas que 
+no sean continuas. Variables discretas y ordinales se evitan. Además, 
+eliminamos la variable SalePrice para solo analizar las variables 
+exploratorias. Las variables descartadas son las siguientes:
+
+* Id
+* MSSubClass
+* OverallQual
+* OverallCond
+* BsmtFullBath
+* FullBath
+* HalfBath
+* BedroomAbvGr
+* TotRmsAbvGrd
+* Fireplaces
+* GarageCars
+* MoSold
+
+Después de la limpieza, quedamos con 16 variables continuas. 
+Deseamos reducir la dimensionalidad de este data set empleando PCA. 
+Primero, creamos la matriz de correlación de este set de datos, y 
+notamos que su determinante es muy cercano a 0. Esto puede evidenciarse 
+que hay bastante correlación entre las matrices, es decir, dependencia 
+lineal entre las variables originales. 
+
+```{r, echo=FALSE}
+dataPCA <- dataOriginal %>%
+  select(where(is.numeric)) %>%
+  select(-c(Id, MSSubClass, OverallQual, OverallCond, 
+            BsmtFullBath, FullBath, HalfBath, BedroomAbvGr, 
+            TotRmsAbvGrd, Fireplaces, GarageCars, MoSold, SalePrice))
+```
+
+```{r}
+rcor <- cor(dataPCA, use = "pairwise.complete.obs")
+det(rcor)
+cor.plot(rcor)
+```
+
+Para asegurarnos de que PCA es aplicable, realizamos el test de 
+esfericidad de Bartlett. El p-valor es prácticamente 0, por lo que 
+descartamos la hipótesis nula del test y concluímos que la matriz de correlación de las variables es distinta a la identidad. 
+
+```{r}
+cortest.bartlett(dataPCA)
+```
+
+\newpage
+Con estos requisitos cumplidos, procedemos a realizar un PCA:
+
+```{r}
+compPrinc <- prcomp(na.omit(dataPCA[,-1]), scale = T)
+summary(compPrinc)
+```
+
+
