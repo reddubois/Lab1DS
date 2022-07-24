@@ -166,6 +166,19 @@ summary(pafDatos)
 
 dataOriginal <- read.csv("train.csv")
 
+dataOriginal <- dataOriginal %>%
+  select(-c(PoolQC, MiscFeature, Alley, Fence, FireplaceQu, Street, 
+            LandContour, Utilities, LandSlope, Condition1, 
+            Condition2, BldgType, RoofMatl, ExterCond, BsmtCond, 
+            BsmtFinType2, Heating, CentralAir, Electrical, Functional, 
+            GarageQual, GarageCond, PavedDrive, SaleType, SaleCondition,
+            BsmtFinSF2, LotArea, LowQualFinSF, BsmtHalfBath, 
+            EnclosedPorch, KitchenAbvGr, X3SsnPorch, MiscVal, 
+            PoolArea, ScreenPorch,RoofStyle))
+
+# También se removió RoofStyle porque provocaba muchas reglas sobre techos triangulares.
+# Se concluyó que probablemente se debe a que muchas casas poseen techos de este tipo.
+
 dataARules <- dataOriginal %>%
   select(where(is.character))
 
@@ -178,11 +191,44 @@ introduce(dataARules)
 
 glimpse(dataARules)
 
-reglas<-apriori(dataARules[, c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22)],
-                                              parameter = list(support = 0.2,
-                                              confidence = 0.70,
+reglas<-apriori(dataARules[, c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)],
+                                              parameter = list(support = 0.48,
+                                              confidence = 0.60,
                                               target = "rules"))
-#Advertencia: Aún debemos quitar algunas variables o incrementar algún parámetro para evitar muchas reglas (actualmente más de 3000).
-
 inspect(reglas)
 
+# Usando un support de 48% y un confidence de 60%, se obtuvieron las siguientes reglas:
+
+#      lhs                    rhs                 support   confidence  coverage   lift      count
+#[1]  {}                  => {ExterQual=TA}      0.6205479 0.6205479  1.0000000 1.0000000  906 
+#[2]  {}                  => {LotShape=Reg}      0.6335616 0.6335616  1.0000000 1.0000000  925 
+#[3]  {}                  => {BsmtExposure=No}   0.6527397 0.6527397  1.0000000 1.0000000  953 
+#[4]  {}                  => {LotConfig=Inside}  0.7205479 0.7205479  1.0000000 1.0000000 1052 
+#[5]  {}                  => {MSZoning=RL}       0.7883562 0.7883562  1.0000000 1.0000000 1151 
+
+#[6]  {GarageType=Attchd} => {MSZoning=RL}       0.5308219 0.8908046  0.5958904 1.1299520  775 
+#[7]  {MSZoning=RL}       => {GarageType=Attchd} 0.5308219 0.6733275  0.7883562 1.1299520  775 
+
+#[8]  {LotShape=Reg}      => {LotConfig=Inside}  0.5123288 0.8086486  0.6335616 1.1222690  748 
+#[9]  {LotConfig=Inside}  => {LotShape=Reg}      0.5123288 0.7110266  0.7205479 1.1222690  748 
+
+#[10] {BsmtExposure=No}   => {LotConfig=Inside}  0.4801370 0.7355719  0.6527397 1.0208507  701 
+#[11] {LotConfig=Inside}  => {BsmtExposure=No}   0.4801370 0.6663498  0.7205479 1.0208507  701 
+
+#[12] {BsmtExposure=No}   => {MSZoning=RL}       0.4883562 0.7481637  0.6527397 0.9490174  713 
+#[13] {MSZoning=RL}       => {BsmtExposure=No}   0.4883562 0.6194613  0.7883562 0.9490174  713 
+
+#[14] {LotConfig=Inside}  => {MSZoning=RL}       0.5506849 0.7642586  0.7205479 0.9694331  804 
+#[15] {MSZoning=RL}       => {LotConfig=Inside}  0.5506849 0.6985230  0.7883562 0.9694331  804 
+
+# Ignoramos las reglas triviales (con premisa nula).
+
+# Algunas reglas interesantes... (todas hablan de probabilidades, no equivalencias exactas)
+# 1. Las primeras dos reglas nos dan una probable equivalencia entre las casas que poseen un garage pegado
+# a ellas y las casas ubicadas en residenciales con baja densidad poblacional.
+# 2. Las siguientes dos reglas nos dicen que las casas cuyo terreno  tiene una forma regular también mantienen
+# todo su terreno en el interior de la propiedad.
+# 3. Las casas sin exposición exterior a su sótano son casas que mantienen su terreno en el interior.
+# 4. Las casas sin exposición exterior a su sótano son casas en residenciales con baja densidad poblacional.
+# 5. La quinta regla junta la 3 y 4. Las casas con su terreno completamente en el interior son casas en
+# residenciales con baja densidad poblacional.
