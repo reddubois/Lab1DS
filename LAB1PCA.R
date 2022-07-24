@@ -153,7 +153,65 @@ pafData$KMO #0.42 La adecuaciÃ³n a la muestra es mala
 pafData$Bartlett #198.58 Mientras mas alto sea mejor
 summary(pafDatos)
 
+## ====================== PCA ======================
 
+# Filtramos las variables numéricas para realizarles 
+# un PCA. Luego, de las variables restantes descartamos aquellas que 
+# no sean continuas. Variables discretas y ordinales se evitan. Además, 
+# eliminamos la variable SalePrice para solo analizar las variables 
+# exploratorias. Las variables descartadas son las siguientes:
+
+# Id
+# MSSubClass
+# OverallQual
+# OverallCond
+# BsmtFullBath
+# FullBath
+# HalfBath
+# BedroomAbvGr
+# TotRmsAbvGrd
+# Fireplaces
+# GarageCars
+# MoSold
+
+glimpse(dataOriginal)
+
+dataPCA <- dataOriginal %>%
+  select(where(is.numeric)) %>%
+  select(-c(Id, MSSubClass, OverallQual, OverallCond, 
+            BsmtFullBath, FullBath, HalfBath, BedroomAbvGr, 
+            TotRmsAbvGrd, Fireplaces, GarageCars, MoSold, SalePrice))
+
+
+
+# Despues de la limpieza, quedamos con 16 variables continuas. 
+# Deseamos reducir la dimensionalidad de este data set empleando PCA. 
+# Primero, creamos la matriz de correlaci?n de este set de datos, y 
+# notamos que su determinante es muy cercano a 0. 
+
+rcor <- cor(dataPCA, use = "pairwise.complete.obs")
+det(rcor)
+cor.plot(rcor)
+
+glimpse(dataPCA)
+
+# Para asegurarnos de que PCA es aplicable, realizamos el test de 
+# esfericidad de Bartlett. El p-valor es prácticamente 0, por lo que 
+# descartamos la hipótesis nula del test y concluímos que la 
+# matriz de correlación de las variables es distinta a la identidad. 
+
+cortest.bartlett(dataPCA)
+
+# Con estos requisitos cumplidos, procedemos a realizar un PCA:
+
+compPrinc <- prcomp(na.omit(dataPCA[,-1]), scale = T)
+compPrinc
+summary(compPrinc)
+
+fviz_eig(compPrinc)
+fviz_contrib(compPrinc, choice = "var", axes = 1, top = 10) #Dimensión 1
+
+glimpse(dataOriginal)
 
 ## ====================== Reglas de Asociación ======================
 
