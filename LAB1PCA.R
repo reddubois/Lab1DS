@@ -112,51 +112,6 @@ introduce(dataOriginal)
 
 # Filtramos las variables numéricas para realizarles 
 # un PCA. Luego, de las variables restantes descartamos aquellas que 
-# no sean continuas. Variables discretas y ordinales se evitan. 
-# Las variables descartadas son las siguientes:
-
-# Id
-# MSSubClass
-# OverallQual
-# OverallCond
-# BsmtFullBath
-# FullBath
-# HalfBath
-# BedroomAbvGr
-# TotRmsAbvGrd
-# Fireplaces
-# GarageCars
-# MoSold
-
-glimpse(dataOriginal)
-
-dataPCA <- dataOriginal %>%
-  select(where(is.numeric)) %>%
-  select(-c(Id, MSSubClass, OverallQual, OverallCond, 
-            BsmtFullBath, FullBath, HalfBath, BedroomAbvGr, 
-            TotRmsAbvGrd, Fireplaces, GarageCars, MoSold))
-
-
-
-# Despues de la limpieza, quedamos con 16 variables continuas. 
-# Deseamos reducir la dimensionalidad de este data set empleando PCA. 
-# Primero, creamos la matriz de correlación de este set de datos, y 
-# notamos que su determinante es muy cercano a 0. 
-
-rcor <- cor(dataPCA, use = "pairwise.complete.obs")
-det(rcor)
-
-# 
-
-pafData <- paf(as.matrix(dataPCA))
-pafData$KMO #0.42 La adecuaciÃ³n a la muestra es mala
-pafData$Bartlett #198.58 Mientras mas alto sea mejor
-summary(pafDatos)
-
-## ====================== PCA ======================
-
-# Filtramos las variables numéricas para realizarles 
-# un PCA. Luego, de las variables restantes descartamos aquellas que 
 # no sean continuas. Variables discretas y ordinales se evitan. Además, 
 # eliminamos la variable SalePrice para solo analizar las variables 
 # exploratorias. Las variables descartadas son las siguientes:
